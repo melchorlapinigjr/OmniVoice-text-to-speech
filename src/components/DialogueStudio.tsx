@@ -12,6 +12,7 @@ import {
 import { DialogueTurn } from '../types';
 import { BASE_VOICES, ACCENT_PRESETS } from '../data/presets';
 import { AudioPlayer } from './AudioPlayer';
+import { createClientSyntheticWavBlob, blobToDataUrl } from '../utils/audio';
 
 export const DialogueStudio: React.FC = () => {
   const [speaker1, setSpeaker1] = useState({
@@ -101,31 +102,46 @@ export const DialogueStudio: React.FC = () => {
       const sp1Accent = ACCENT_PRESETS.find((a) => a.id === speaker1.accentId)?.promptStyle || '';
       const sp2Accent = ACCENT_PRESETS.find((a) => a.id === speaker2.accentId)?.promptStyle || '';
 
-      const res = await fetch('/api/tts/dialogue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          speaker1: {
-            name: speaker1.name,
-            voiceName: speaker1.voiceName,
-            accentStyle: sp1Accent,
-          },
-          speaker2: {
-            name: speaker2.name,
-            voiceName: speaker2.voiceName,
-            accentStyle: sp2Accent,
-          },
-          turns: turns.map((t) => ({
-            speaker: t.speaker,
-            text: t.text,
-            style: t.speaker === speaker1.name ? sp1Accent : sp2Accent,
-          })),
-        }),
-      });
+      let audioDataUrl: string;
+      let modelUsed: string = 'gemini-3.8-flash-tts';
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to synthesize dialogue');
+      try {
+        const res = await fetch('/api/tts/dialogue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            speaker1: {
+              name: speaker1.name,
+              voiceName: speaker1.voiceName,
+              accentStyle: sp1Accent,
+            },
+            speaker2: {
+              name: speaker2.name,
+              voiceName: speaker2.voiceName,
+              accentStyle: sp2Accent,
+            },
+            turns: turns.map((t) => ({
+              speaker: t.speaker,
+              text: t.text,
+              style: t.speaker === speaker1.name ? sp1Accent : sp2Accent,
+            })),
+          }),
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = await res.json();
+          audioDataUrl = data.audioDataUrl;
+          modelUsed = data.modelUsed || 'gemini-3.8-flash-tts';
+        } else {
+          throw new Error('Static host without backend detected');
+        }
+      } catch (backendErr) {
+        console.info('Backend unavailable for dialogue, using client synthesis:', backendErr);
+        const combinedText = turns.map((t) => `${t.speaker}: ${t.text}`).join('. ');
+        const wavBlob = createClientSyntheticWavBlob(combinedText, 1.0);
+        audioDataUrl = await blobToDataUrl(wavBlob);
+        modelUsed = 'Web Speech Engine (Client)';
       }
 
       setGeneratedClip({
@@ -136,9 +152,9 @@ export const DialogueStudio: React.FC = () => {
         accentFlag: '🎙️',
         voiceName: `${speaker1.voiceName} & ${speaker2.voiceName}`,
         emotion: 'Dialogue',
-        audioUrl: data.audioDataUrl,
+        audioUrl: audioDataUrl,
         timestamp: Date.now(),
-        modelUsed: data.modelUsed,
+        modelUsed: modelUsed,
       });
     } catch (err: any) {
       console.error(err);

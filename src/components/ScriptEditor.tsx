@@ -75,12 +75,25 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
           accentName: selectedAccentName,
         }),
       });
-      const data = await res.json();
-      if (data.enhancedText) {
-        onChangeText(data.enhancedText);
+
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.enhancedText) {
+          onChangeText(data.enhancedText);
+        }
+      } else {
+        // Local formatting fallback for static hosting
+        if (goal === 'podcast-host') {
+          onChangeText(`Hey everyone! <breath> ${text} |yeah|`);
+        } else if (goal === 'storyteller') {
+          onChangeText(`Listen closely... [pause] ${text} <breath>`);
+        } else {
+          onChangeText(`${text}`);
+        }
       }
     } catch (err) {
-      console.error('Enhance failed:', err);
+      console.warn('Enhance unavailable on static host:', err);
     } finally {
       setIsEnhancing(false);
     }

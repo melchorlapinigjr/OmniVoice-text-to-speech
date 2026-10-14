@@ -18,6 +18,11 @@ import { AccentLabModal } from './components/AccentLabModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ACCENT_PRESETS, BASE_VOICES, SCRIPT_TEMPLATES } from './data/presets';
 import { AccentConfig, GeneratedClip, TTSGenerationOptions } from './types';
+import {
+  createClientSyntheticWavBlob,
+  blobToDataUrl,
+  speakWithBrowserSynthesis,
+} from './utils/audio';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'studio' | 'dialogue' | 'explorer'>('studio');
@@ -113,15 +118,31 @@ export default function App() {
         preferredModel,
       };
 
-      const res = await fetch('/api/tts/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      let audioDataUrl: string;
+      let modelUsed: string = preferredModel;
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to synthesize speech');
+      try {
+        const res = await fetch('/api/tts/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = await res.json();
+          audioDataUrl = data.audioDataUrl;
+          modelUsed = data.modelUsed || preferredModel;
+        } else {
+          throw new Error('Static host without backend detected');
+        }
+      } catch (backendErr) {
+        console.info('Backend unavailable, using browser synthesis engine:', backendErr);
+        const pitchMult = pitchShift === 'deep' ? 0.8 : pitchShift === 'bright' ? 1.25 : 1.0;
+        const wavBlob = createClientSyntheticWavBlob(text.trim(), pitchMult);
+        audioDataUrl = await blobToDataUrl(wavBlob);
+        modelUsed = 'Web Speech Engine (Client)';
+        speakWithBrowserSynthesis(text.trim(), undefined, undefined, 1.0, pitchMult, selectedAccent.id);
       }
 
       const activeName = isCustomAccentActive ? customAccentName : selectedAccent.name;
@@ -135,9 +156,9 @@ export default function App() {
         accentFlag: activeFlag,
         voiceName: selectedVoice,
         emotion: selectedEmotion,
-        audioUrl: data.audioDataUrl,
+        audioUrl: audioDataUrl,
         timestamp: Date.now(),
-        modelUsed: data.modelUsed,
+        modelUsed: modelUsed,
       };
 
       setCurrentClip(newClip);
@@ -146,7 +167,7 @@ export default function App() {
       console.error('Speech synthesis error:', err);
       setErrorMessage(
         err?.message ||
-          'Failed to generate speech. Please verify your connection or try a different voice.'
+          'Failed to generate speech. Please try a different voice.'
       );
     } finally {
       setIsGenerating(false);

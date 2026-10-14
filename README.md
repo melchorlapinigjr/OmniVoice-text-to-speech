@@ -128,6 +128,16 @@ OmniVoice AI Studio
    npm run start
    ```
 
+5. **Deploying to GitHub Pages**:
+   - The Vite build is configured with `base: './'` to support repository subpaths (e.g., `https://<username>.github.io/<repo-name>/`).
+   - Run `npm run build` to generate the production assets in `dist/`.
+   - The build automatically includes `dist/404.html` and `.nojekyll` for smooth routing on GitHub Pages.
+   - Deploy the `dist` folder to your `gh-pages` branch using GitHub Actions or `gh-pages`:
+     ```bash
+     npx gh-pages -d dist
+     ```
+   - On GitHub Pages (static hosting), the app automatically runs in client-side speech synthesis mode so voice generation, playback, waveforms, and audio blob downloads work immediately without needing a server.
+
 ---
 
 ## 📡 API Reference

@@ -1,0 +1,6 @@
+{
+  "name": "AfriVoice AI - Text to Speech & Voice Studio",
+  "description": "Advanced Text-to-Speech studio with African accent customization, regional dialects, voice persona design, audio effects, and multi-speaker dialogue powered by Gemini TTS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

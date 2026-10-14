@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0c0d14;
+    color: #f1f3f9;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1f2438;
+  height: 6px;
+  border-radius: 9999px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f59e0b;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #fbbf24;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f59e0b;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+/* Custom sound wave pulse animation */
+@keyframes soundwave-pulse {
+  0%, 100% {
+    height: 12%;
+  }
+  50% {
+    height: 98%;
+  }
+}
+
+.animate-soundwave {
+  animation: soundwave-pulse 1.2s ease-in-out infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 17, 26, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.45);
+}
